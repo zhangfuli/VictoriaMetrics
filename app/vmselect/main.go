@@ -106,13 +106,13 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) bool {
 	default:
 		// Sleep for a while until giving up. This should resolve short bursts in requests.
 		concurrencyLimitReached.Inc()
-		d := searchutils.GetMaxQueryDuration(r)
+		d := searchutils.GetMaxQueryDuration(r) // 将设置的超时时间与 http中的超时时间对比, 选择最大的
 		if d > *maxQueueDuration {
 			d = *maxQueueDuration
 		}
 		t := timerpool.Get(d)
 		select {
-		case concurrencyLimitCh <- struct{}{}:
+		case concurrencyLimitCh <- struct{}{}: //在maxQueueDuration时间内等待其他请求释放资源, 如果获取到资源, 则回收timer
 			timerpool.Put(t)
 			qt.Printf("wait in queue because -search.maxConcurrentRequests=%d concurrent requests are executed", *maxConcurrentRequests)
 			defer func() { <-concurrencyLimitCh }()
@@ -123,7 +123,7 @@ func RequestHandler(w http.ResponseWriter, r *http.Request) bool {
 			logger.Infof("client has cancelled the request after %.3f seconds: remoteAddr=%s, requestURI: %q",
 				time.Since(startTime).Seconds(), remoteAddr, requestURI)
 			return true
-		case <-t.C:
+		case <-t.C: //在maxQueueDuration时间内没有获取到资源，定时器超时后回收timer，丢弃请求并返回错误信息
 			timerpool.Put(t)
 			concurrencyLimitTimeout.Inc()
 			err := &httpserver.ErrorWithStatusCode{

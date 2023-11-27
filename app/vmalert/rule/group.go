@@ -52,7 +52,7 @@ type Group struct {
 	// see https://github.com/VictoriaMetrics/VictoriaMetrics/issues/5155
 	EvalDelay      *time.Duration
 	Limit          int
-	Concurrency    int
+	Concurrency    int // 并行执行的RecordingRule的数量, Concurrency >= len(rule), 才有效
 	Checksum       string
 	LastEvaluation time.Time
 

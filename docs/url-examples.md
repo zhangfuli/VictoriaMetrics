@@ -275,7 +275,7 @@ Additional information:
 * [How to export time series](https://docs.victoriametrics.com/#how-to-export-time-series)
 * [URL format for VictoriaMetrics cluster](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format)
 
-## /api/v1/labels
+### /api/v1/labels
 
 **Get a list of label names at the given time range**
 
@@ -473,7 +473,7 @@ http://vminsert:8480/insert/0/datadog
 
 ### /datadog/api/v1/series
 
-**Imports data in DataDog format into VictoriaMetrics**
+**Imports data in DataDog v1 format into VictoriaMetrics**
 
 Single-node VictoriaMetrics:
 <div class="with-copy" markdown="1">
@@ -531,7 +531,79 @@ echo '
 
 Additional information:
 
-* [How to send data from datadog agent](https://docs.victoriametrics.com/#how-to-send-data-from-datadog-agent)
+* [How to send data from DataDog agent](https://docs.victoriametrics.com/#how-to-send-data-from-datadog-agent)
+* [URL format for VictoriaMetrics cluster](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format)
+
+
+### /datadog/api/v2/series
+
+**Imports data in [DataDog v2](https://docs.datadoghq.com/api/latest/metrics/#submit-metrics) format into VictoriaMetrics**
+
+Single-node VictoriaMetrics:
+<div class="with-copy" markdown="1">
+
+```console
+echo '
+{
+  "series": [
+    {
+      "metric": "system.load.1",
+      "type": 0,
+      "points": [
+        {
+          "timestamp": 0,
+          "value": 0.7
+        }
+      ],
+      "resources": [
+        {
+          "name": "dummyhost",
+          "type": "host"
+        }
+      ],
+      "tags": ["environment:test"]
+    }
+  ]
+}
+' | curl -X POST -H 'Content-Type: application/json' --data-binary @- http://localhost:8428/datadog/api/v2/series
+```
+
+</div>
+
+Cluster version of VictoriaMetrics:
+<div class="with-copy" markdown="1">
+
+```console
+echo '
+{
+  "series": [
+    {
+      "metric": "system.load.1",
+      "type": 0,
+      "points": [
+        {
+          "timestamp": 0,
+          "value": 0.7
+        }
+      ],
+      "resources": [
+        {
+          "name": "dummyhost",
+          "type": "host"
+        }
+      ],
+      "tags": ["environment:test"]
+    }
+  ]
+}
+' | curl -X POST -H 'Content-Type: application/json' --data-binary @- 'http://<vminsert>:8480/insert/0/datadog/api/v2/series'
+```
+
+</div>
+
+Additional information:
+
+* [How to send data from DataDog agent](https://docs.victoriametrics.com/#how-to-send-data-from-datadog-agent)
 * [URL format for VictoriaMetrics cluster](https://docs.victoriametrics.com/Cluster-VictoriaMetrics.html#url-format)
 
 ### /federate
@@ -631,13 +703,17 @@ curl -Is http://localhost:8428/internal/resetRollupResultCache
 
 </div>
 
-Cluster version of VictoriaMetrics::
+Cluster version of VictoriaMetrics:
 
 <div class="with-copy" markdown="1">
 
 ```console
 curl -Is http://<vmselect>:8481/select/internal/resetRollupResultCache
 ```
+
+vmselect will propagate this call to the rest of the vmselects listed in its `-selectNode` cmd-line flag. If this
+flag isn't set, then cache need to be purged from each vmselect individually.
+
 
 </div>
 

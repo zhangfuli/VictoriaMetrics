@@ -164,12 +164,16 @@ func (s *VMStorage) setPrometheusInstantReqParams(r *http.Request, query string,
 	if s.lookBack > 0 {
 		timestamp = timestamp.Add(-s.lookBack)
 	}
+	// 以启动时间+interval作为抓取时间 放入http请求
 	q.Set("time", timestamp.Format(time.RFC3339))
 	if !*disableStepParam && s.evaluationInterval > 0 { // set step as evaluationInterval by default
 		// always convert to seconds to keep compatibility with older
 		// Prometheus versions. See https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1943
+
+		// step = interval
 		q.Set("step", fmt.Sprintf("%ds", int(s.evaluationInterval.Seconds())))
 	}
+	// s.queryStep 默认是0
 	if !*disableStepParam && s.queryStep > 0 { // override step with user-specified value
 		// always convert to seconds to keep compatibility with older
 		// Prometheus versions. See https://github.com/VictoriaMetrics/VictoriaMetrics/issues/1943
